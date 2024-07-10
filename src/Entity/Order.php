@@ -2,18 +2,16 @@
 
 namespace App\Entity;
 
-use App\Controller\Order\OrderValidation;
-use App\Controller\Order\GetOrder;
-use App\Dto\OrderInput;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use App\Repository\OrderRepository;
+use App\State\OrderStateProcessor;
 use App\State\OrderStateProvider;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
-use Doctrine\ORM\Mapping\PrePersist;
 
 #[ORM\Entity(repositoryClass: OrderRepository::class)]
 #[ORM\Table(name: '`order`')]
@@ -23,13 +21,11 @@ use Doctrine\ORM\Mapping\PrePersist;
             provider: OrderStateProvider::class
         ),
         new Post(
-            controller: OrderValidation::class,
-            status: 201,
-            output: Order::class
+            processor: OrderStateProcessor::class,
+            inputFormats: ['json' => ['application/json']]
         )
     ]
 )]
-#[HasLifecycleCallbacks]
 class Order
 {
     #[ORM\Id]
@@ -49,6 +45,17 @@ class Order
 
     #[ORM\Column]
     private ?float $price = null;
+
+    /**
+     * @var Collection<int, AssocProductOrder>
+     */
+    #[ORM\OneToMany(targetEntity: AssocProductOrder::class, mappedBy: 'commande')]
+    private Collection $assocProductOrders;
+
+    public function __construct()
+    {
+        $this->assocProductOrders = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -99,6 +106,36 @@ class Order
     public function setPrice(float $price): static
     {
         $this->price = $price;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, AssocProductOrder>
+     */
+    public function getAssocProductOrders(): Collection
+    {
+        return $this->assocProductOrders;
+    }
+
+    public function addAssocProductOrder(AssocProductOrder $assocProductOrder): static
+    {
+        if (!$this->assocProductOrders->contains($assocProductOrder)) {
+            $this->assocProductOrders->add($assocProductOrder);
+            $assocProductOrder->setCommande($this);
+        }
+
+        return $this;
+    }
+
+    public function removeAssocProductOrder(AssocProductOrder $assocProductOrder): static
+    {
+        if ($this->assocProductOrders->removeElement($assocProductOrder)) {
+            // set the owning side to null (unless already changed)
+            if ($assocProductOrder->getCommande() === $this) {
+                $assocProductOrder->setCommande(null);
+            }
+        }
 
         return $this;
     }
