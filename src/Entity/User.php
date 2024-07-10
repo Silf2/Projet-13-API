@@ -3,22 +3,27 @@
 namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
-use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Post;
+use App\EventListener\UserLifecycleListener;
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
+#[HasLifecycleCallbacks]
 #[ApiResource(
     operations: [
-        new GetCollection()
-    ],
-    normalizationContext: ['groups' => ['read:User']]
+        new Post(
+            normalizationContext: ['groups' => ['read:User']],
+            denormalizationContext: ['groups' => ['write:User']]
+        )
+    ]
 )]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
@@ -29,7 +34,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?int $id = null;
 
     #[ORM\Column(length: 180)]
-    #[Groups(['read:User'])]
+    #[Groups(['read:User', 'write:User'])]
     private ?string $email = null;
 
     /**
@@ -43,14 +48,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      * @var string The hashed password
      */
     #[ORM\Column]
+    #[Groups(['write:User'])]
     private ?string $password = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['read:User'])]
+    #[Groups(['read:User', 'write:User'])]
     private ?string $firstName = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['read:User'])]
+    #[Groups(['read:User', 'write:User'])]
     private ?string $lastName = null;
 
     /**
