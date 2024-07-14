@@ -12,44 +12,53 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: OrderRepository::class)]
 #[ORM\Table(name: '`order`')]
 #[ApiResource(
     operations: [
         new GetCollection(
+            normalizationContext: ['groups' => [self::READ_GROUP]],
             provider: OrderStateProvider::class
         ),
         new Post(
+            denormalizationContext: ['groups' => [self::CREATE_GROUP]],
+            normalizationContext: ['groups' => [self::READ_GROUP]],
             processor: OrderStateProcessor::class,
-            inputFormats: ['json' => ['application/json']]
+            // inputFormats: ['json' => ['application/json']]
         )
     ]
 )]
-class Order
+class Order implements GroupsInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups([self::READ_GROUP])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups([self::READ_GROUP])]
     private ?string $orderNumber = null;
 
     #[ORM\ManyToOne(inversedBy: 'orders')]
     #[ORM\JoinColumn(nullable: false)]
     private ?User $user = null;
 
+    #[Groups([self::READ_GROUP])]
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $orderDate = null;
 
+    #[Groups([self::READ_GROUP])]
     #[ORM\Column]
     private ?float $price = null;
 
     /**
      * @var Collection<int, AssocProductOrder>
      */
-    #[ORM\OneToMany(targetEntity: AssocProductOrder::class, mappedBy: 'commande')]
+    #[ORM\OneToMany(targetEntity: AssocProductOrder::class, mappedBy: 'commande', cascade: ['persist'])]
+    #[Groups([self::READ_GROUP, self::CREATE_GROUP])]
     private Collection $assocProductOrders;
 
     public function __construct()

@@ -11,25 +11,36 @@ use App\Repository\AssocProductOrderRepository;
 use App\Repository\OrderRepository;
 use App\Repository\ProductRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
 class OrderStateProcessor implements ProcessorInterface
 {
     public function __construct(
-        private EntityManagerInterface $em,
-        private ProductRepository $productRepository,
-        private AssocProductOrderRepository $assocProductOrderRepository,
-        private OrderRepository $orderRepository,
+        // private EntityManagerInterface $em,
+        // private ProductRepository $productRepository,
+        // private AssocProductOrderRepository $assocProductOrderRepository,
+        // private OrderRepository $orderRepository,
+        #[Autowire(service: 'api_platform.doctrine.orm.state.persist_processor')]
+        private ProcessorInterface $processor,
         private TokenStorageInterface $tokenStorage
     )
     {}
 
+    /**
+     * @param Order $data
+     */
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = [])
     {
-        dump($data);
-        if(!is_array($data) || !isset($data[0]['productId'], $data[0]['quantity'])) {
-            throw new BadRequestHttpException('Votre commande n\'est pas valide');
+        if (!$data || !$data->getAssocProductOrders()) {
+            throw new BadRequestHttpException('Le panier n\'est pas valide.');
+        }
+        
+        foreach ($data->getAssocProductOrders() as $product) {
+            if (!$product->getProduct() || !$product->getQuantity()) {
+                throw new BadRequestHttpException('Le panier n\'est pas valide.');
+            }
         }
 
         $token = $this->tokenStorage->getToken();
@@ -40,28 +51,18 @@ class OrderStateProcessor implements ProcessorInterface
             throw new \Exception('L\utilisateur n\'est pas connecté');
         }
 
-        $order = new Order();
-        $this->orderRepository->createOrder($order, $user);
-
         $totalPrice = 0.0;
-        foreach($data as $item) {
-            $product = $this->productRepository->findOneBy($item['productId']);
-            
-            if (!$product) {
-                throw new BadRequestHttpException('L\'id du produit ' . $item['articleId'] . 'n\'existe pas');
-            }
 
-            $assocProductOrder = new AssocProductOrder();
-            $this->assocProductOrderRepository->createAssociation($assocProductOrder, $product, $item['quantity'], $order);
-
-            $totalPrice += $product->getPrice() * $item['quantity'];
+        /** @var AssocProductOrder $item */
+        foreach($data->getAssocProductOrders() as $item) {
+            $totalPrice += $item->getProduct()->getPrice() * $item->getQuantity();
         }
 
-        $order->setPrice($totalPrice);
-        $this->em->persist($order);
-        
-        $this->em->flush();
+        $data->setOrderNumber(uniqid());
+        $data->setOrderDate(new \DateTime());
+        $data->setUser($user);
+        $data->setPrice($totalPrice);
 
-        return $order;
+        return $this->processor->process($data, $operation, $uriVariables, $context);
     }
 }

@@ -4,9 +4,10 @@ namespace App\Entity;
 
 use App\Repository\AssocProductOrderRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: AssocProductOrderRepository::class)]
-class AssocProductOrder
+class AssocProductOrder implements GroupsInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -19,9 +20,11 @@ class AssocProductOrder
 
     #[ORM\ManyToOne(inversedBy: 'assocProductOrders')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups([self::READ_GROUP, self::CREATE_GROUP])]
     private ?Product $product = null;
 
     #[ORM\Column]
+    #[Groups([self::READ_GROUP, self::CREATE_GROUP])]
     private ?int $quantity = null;
 
     public function getId(): ?int
