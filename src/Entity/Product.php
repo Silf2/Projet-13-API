@@ -39,6 +39,7 @@ class Product
     private ?string $shortDescription = null;
 
     #[ORM\Column(length: 1020)]
+    #[Groups(['product:read'])]
     private ?string $fullDescription = null;
 
     #[ORM\Column]
@@ -46,6 +47,7 @@ class Product
     private ?float $price = null;
 
     #[ORM\Column(length: 510)]
+    #[Groups(['product:read'])]
     private ?string $picture = null;
 
     /**
