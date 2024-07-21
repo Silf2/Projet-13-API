@@ -7,10 +7,6 @@ use App\Entity\AssocProductOrder;
 use App\Entity\Order;
 use App\Entity\User;
 use ApiPlatform\State\ProcessorInterface;
-use App\Repository\AssocProductOrderRepository;
-use App\Repository\OrderRepository;
-use App\Repository\ProductRepository;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
@@ -18,10 +14,6 @@ use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInt
 class OrderStateProcessor implements ProcessorInterface
 {
     public function __construct(
-        // private EntityManagerInterface $em,
-        // private ProductRepository $productRepository,
-        // private AssocProductOrderRepository $assocProductOrderRepository,
-        // private OrderRepository $orderRepository,
         #[Autowire(service: 'api_platform.doctrine.orm.state.persist_processor')]
         private ProcessorInterface $processor,
         private TokenStorageInterface $tokenStorage
