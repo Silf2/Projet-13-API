@@ -56,7 +56,7 @@ class Order implements GroupsInterface
     /**
      * @var Collection<int, AssocProductOrder>
      */
-    #[ORM\OneToMany(targetEntity: AssocProductOrder::class, mappedBy: 'commande', cascade: ['persist'])]
+    #[ORM\OneToMany(targetEntity: AssocProductOrder::class, mappedBy: 'commande', cascade: ['persist', 'remove'])]
     #[Groups([self::READ_GROUP, self::CREATE_GROUP])]
     private Collection $assocProductOrders;
 
