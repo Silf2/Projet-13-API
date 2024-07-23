@@ -26,7 +26,6 @@ use Symfony\Component\Serializer\Attribute\Groups;
             denormalizationContext: ['groups' => [self::CREATE_GROUP]],
             normalizationContext: ['groups' => [self::READ_GROUP]],
             processor: OrderStateProcessor::class,
-            // inputFormats: ['json' => ['application/json']]
         )
     ]
 )]

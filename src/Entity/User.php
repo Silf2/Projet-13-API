@@ -3,9 +3,13 @@
 namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Post;
+use App\Controller\DeleteUserAction;
 use App\EventListener\UserLifecycleListener;
 use App\Repository\UserRepository;
+use App\State\DeleteUserStateProcessor;
+use App\State\DeleteUserStateProvider;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -22,6 +26,11 @@ use Symfony\Component\Serializer\Annotation\Groups;
         new Post(
             normalizationContext: ['groups' => ['read:User']],
             denormalizationContext: ['groups' => ['write:User']]
+        ),
+        new Delete(
+            uriTemplate: '/users',
+            controller: DeleteUserAction::class,
+            security: "is_granted('IS_AUTHENTICATED_FULLY')"
         )
     ]
 )]
